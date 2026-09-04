@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>For You</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Inter:wght@400;500;600&display=swap');
+
+  :root{
+    --plum: #3d2a35;
+    --blush: #e9c6c9;
+    --blush-deep: #d9a0a8;
+    --paper: #fbf3ee;
+    --gold: #b98d4f;
+    --ink: #4a3a41;
+  }
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+
+  html,body{
+    height:100%;
+    background: var(--paper);
+  }
+
+  body{
+    font-family:'Inter', sans-serif;
+    color: var(--ink);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:100vh;
+    min-height:100dvh;
+    overflow:hidden;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .frame{
+    width:100%;
+    max-width:428px;
+    height:100vh;
+    height:100dvh;
+    max-height:926px;
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    padding: 32px 28px;
+    overflow:hidden;
+  }
+
+  .bloom{
+    position:absolute;
+    border-radius:50%;
+    filter: blur(60px);
+    opacity:0.55;
+    z-index:0;
+    transition: opacity 0.6s ease;
+  }
+  .bloom-1{ width:280px; height:280px; background:var(--blush); top:-60px; left:-80px; }
+  .bloom-2{ width:220px; height:220px; background:var(--blush-deep); bottom:-40px; right:-60px; }
+
+  .screen{
+    position:relative;
+    z-index:1;
+    display:none;
+    flex-direction:column;
+    gap: 44px;
+    animation: rise 0.55s ease forwards;
+  }
+  .screen.active{ display:flex; }
+
+  @keyframes rise{
+    from{ opacity:0; transform: translateY(14px); }
+    to{ opacity:1; transform: translateY(0); }
+  }
+
+  .eyebrow{
+    font-size:14px;
+    letter-spacing:0.03em;
+    color: var(--gold);
+    font-style: italic;
+    font-family:'Cormorant Garamond', serif;
+  }
+
+  .headline{
+    font-family:'Cormorant Garamond', serif;
+    font-weight:500;
+    font-size:clamp(34px, 9vw, 44px);
+    line-height:1.15;
+    color: var(--plum);
+  }
+
+  .sub{
+    font-size:16px;
+    line-height:1.55;
+    color: var(--ink);
+    opacity:0.85;
+    max-width:34ch;
+  }
+
+  .choices{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    margin-top:8px;
+  }
+
+  button.choice{
+    font-family:'Inter', sans-serif;
+    font-size:17px;
+    font-weight:500;
+    color: var(--plum);
+    background: rgba(255,255,255,0.55);
+    border: 1px solid rgba(61,42,53,0.18);
+    border-radius: 999px;
+    padding: 17px 26px;
+    text-align:left;
+    cursor:pointer;
+    transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  }
+
+  button.choice:active{
+    transform: scale(0.97);
+    background: rgba(255,255,255,0.85);
+  }
+
+  button.choice.primary{
+    background: var(--plum);
+    color: var(--paper);
+    border-color: var(--plum);
+  }
+  button.choice.primary:active{
+    background:#2c1e26;
+  }
+
+  .mark{
+    position:absolute;
+    top:28px;
+    left:28px;
+    right:28px;
+    display:flex;
+    gap:6px;
+    z-index:2;
+  }
+  .dot{
+    height:3px;
+    flex:1;
+    border-radius:3px;
+    background: rgba(61,42,53,0.15);
+    overflow:hidden;
+  }
+  .dot span{
+    display:block;
+    height:100%;
+    width:0%;
+    background: var(--plum);
+    transition: width 0.4s ease;
+  }
+  .dot.filled span{ width:100%; }
+
+  .final .headline{ font-size: clamp(32px, 8.5vw, 40px); }
+  .heart{
+    font-size:15px;
+    letter-spacing:0.02em;
+    color: var(--gold);
+    margin-top:-24px;
+  }
+</style>
+</head>
+<body>
+
+<div class="frame">
+  <div class="bloom bloom-1"></div>
+  <div class="bloom bloom-2"></div>
+
+  <div class="mark" id="progress">
+    <div class="dot" data-step="1"><span></span></div>
+    <div class="dot" data-step="2"><span></span></div>
+    <div class="dot" data-step="3"><span></span></div>
+  </div>
+
+  <!-- Screen 1 -->
+  <section class="screen active" data-screen="love">
+    <div>
+      <div class="eyebrow">a small question</div>
+      <h1 class="headline">Are you in love with me?</h1>
+    </div>
+    <div class="choices">
+      <button class="choice primary" data-next="date" data-answer="yes">Yes, I am</button>
+      <button class="choice" data-next="love-no" data-answer="no">No</button>
+    </div>
+  </section>
+
+  <!-- Screen love-no (soft fallback if she says no to Q1) -->
+  <section class="screen" data-screen="love-no">
+    <div>
+      <div class="eyebrow">okay</div>
+      <h1 class="headline">That's alright. Can I ask you something else anyway?</h1>
+      <p class="sub">No pressure on the first one. Just curious about this one too.</p>
+    </div>
+    <div class="choices">
+      <button class="choice primary" data-next="date">Go on then</button>
+    </div>
+  </section>
+
+  <!-- Screen 2 -->
+  <section class="screen" data-screen="date">
+    <div>
+      <div class="eyebrow">be honest</div>
+      <h1 class="headline">Would you go out with me?</h1>
+      <p class="sub">Answer as truthfully as you can.</p>
+    </div>
+    <div class="choices">
+      <button class="choice primary" data-next="final-yes" data-answer="yes">Yes</button>
+      <button class="choice" data-next="court" data-answer="no">Not right now</button>
+    </div>
+  </section>
+
+  <!-- Screen 3: court -->
+  <section class="screen" data-screen="court">
+    <div>
+      <div class="eyebrow">one more, then</div>
+      <h1 class="headline">Will you let me court you?</h1>
+      <p class="sub">I know you're not ready to date again yet, and that's okay. I'd still like to take you on more dates, if you'll let me.</p>
+    </div>
+    <div class="choices">
+      <button class="choice primary" data-next="final-court" data-answer="yes">I'd like that</button>
+      <button class="choice" data-next="final-notyet" data-answer="no">Not yet</button>
+    </div>
+  </section>
+
+  <!-- Final: date yes -->
+  <section class="screen final" data-screen="final-yes">
+    <div>
+      <div class="eyebrow">then it's settled</div>
+      <h1 class="headline">Good. I'll pick the place.</h1>
+      <p class="sub">Thank you for saying yes. I'm really glad you're here.</p>
+    </div>
+    <p class="heart">&#9825;</p>
+  </section>
+
+  <!-- Final: court yes -->
+  <section class="screen final" data-screen="final-court">
+    <div>
+      <div class="eyebrow">no rush</div>
+      <h1 class="headline">Then more dates it is.</h1>
+      <p class="sub">Thank you for letting me stay close to you. I'll take it exactly as slow as you need.</p>
+    </div>
+    <p class="heart">&#9825;</p>
+  </section>
+
+  <!-- Final: not yet -->
+  <section class="screen final" data-screen="final-notyet">
+    <div>
+      <div class="eyebrow">that's okay too</div>
+      <h1 class="headline">I'll still be here.</h1>
+      <p class="sub">Whenever you're ready, however that looks. No pressure, just patience.</p>
+    </div>
+    <p class="heart">&#9825;</p>
+  </section>
+
+</div>
+
+<script>
+  const screens = document.querySelectorAll('.screen');
+  const dots = document.querySelectorAll('.dot');
+
+  // maps each screen name to a progress step (1-3), final screens count as step 3
+  const stepMap = {
+    'love': 1, 'love-no': 1,
+    'date': 2,
+    'court': 3,
+    'final-yes': 3, 'final-court': 3, 'final-notyet': 3
+  };
+
+  function showScreen(name){
+    screens.forEach(s => s.classList.remove('active'));
+    const target = document.querySelector(`[data-screen="${name}"]`);
+    if(target) target.classList.add('active');
+
+    const step = stepMap[name] || 1;
+    dots.forEach(d => {
+      const dStep = parseInt(d.dataset.step, 10);
+      d.classList.toggle('filled', dStep <= step);
+    });
+  }
+
+  document.querySelectorAll('button.choice').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const next = btn.getAttribute('data-next');
+      showScreen(next);
+    });
+  });
+
+  showScreen('love');
+</script>
+
+</body>
+</html>
