@@ -14,6 +14,7 @@
     --paper: #fbf3ee;
     --gold: #b98d4f;
     --ink: #4a3a41;
+    --sparkle: #ff8fb3;
   }
 
   *{box-sizing:border-box; margin:0; padding:0;}
@@ -49,13 +50,32 @@
     overflow:hidden;
   }
 
+  /* ===== per-screen background photo layer =====
+     Drop your own images into an /images folder next to this file and
+     point each screen's --bg-image at the right file. If an image is
+     missing, it just falls back to the soft paper color underneath. */
+  .bg-layer{
+    position:absolute;
+    inset:0;
+    z-index:0;
+    background-image:
+      linear-gradient(180deg, rgba(251,243,238,0.55) 0%, rgba(251,243,238,0.82) 60%, rgba(251,243,238,0.95) 100%),
+      var(--bg-image, none);
+    background-size: cover;
+    background-position: center;
+    opacity:0;
+    transition: opacity 0.5s ease;
+  }
+  .bg-layer.active{ opacity:1; }
+
   .bloom{
     position:absolute;
     border-radius:50%;
     filter: blur(60px);
-    opacity:0.55;
+    opacity:0.45;
     z-index:0;
     transition: opacity 0.6s ease;
+    pointer-events:none;
   }
   .bloom-1{ width:280px; height:280px; background:var(--blush); top:-60px; left:-80px; }
   .bloom-2{ width:220px; height:220px; background:var(--blush-deep); bottom:-40px; right:-60px; }
@@ -66,13 +86,17 @@
     display:none;
     flex-direction:column;
     gap: 44px;
-    animation: rise 0.55s ease forwards;
   }
-  .screen.active{ display:flex; }
+  .screen.active{ display:flex; animation: rise 0.5s ease forwards; }
+  .screen.leaving{ display:flex; animation: fade-out 0.28s ease forwards; }
 
   @keyframes rise{
     from{ opacity:0; transform: translateY(14px); }
     to{ opacity:1; transform: translateY(0); }
+  }
+  @keyframes fade-out{
+    from{ opacity:1; transform: translateY(0); }
+    to{ opacity:0; transform: translateY(-10px); }
   }
 
   .eyebrow{
@@ -106,23 +130,29 @@
     margin-top:8px;
   }
 
+  .choice-wrap{ position:relative; }
+
   button.choice{
+    position:relative;
+    width:100%;
     font-family:'Inter', sans-serif;
     font-size:17px;
     font-weight:500;
     color: var(--plum);
-    background: rgba(255,255,255,0.55);
+    background: rgba(255,255,255,0.65);
     border: 1px solid rgba(61,42,53,0.18);
     border-radius: 999px;
     padding: 17px 26px;
     text-align:left;
     cursor:pointer;
+    backdrop-filter: blur(6px);
     transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+    overflow:visible;
   }
 
   button.choice:active{
     transform: scale(0.97);
-    background: rgba(255,255,255,0.85);
+    background: rgba(255,255,255,0.9);
   }
 
   button.choice.primary{
@@ -141,7 +171,7 @@
     right:28px;
     display:flex;
     gap:6px;
-    z-index:2;
+    z-index:3;
   }
   .dot{
     height:3px;
@@ -166,6 +196,88 @@
     color: var(--gold);
     margin-top:-24px;
   }
+
+  /* ===== sparkles ===== */
+  .sparkle{
+    position:absolute;
+    width:6px;
+    height:6px;
+    border-radius:50%;
+    background: var(--sparkle);
+    pointer-events:none;
+    z-index:5;
+    animation: sparkle-pop 0.7s ease forwards;
+  }
+  @keyframes sparkle-pop{
+    0%{ opacity:0; transform: scale(0) translate(0,0); }
+    30%{ opacity:1; }
+    100%{ opacity:0; transform: scale(1.4) translate(var(--sx), var(--sy)); }
+  }
+
+  /* ===== play-me button + mini audio bar ===== */
+  .play-me{
+    align-self:flex-start;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font-size:14px;
+    font-weight:500;
+    color: var(--plum);
+    background: rgba(255,255,255,0.6);
+    border: 1px solid rgba(61,42,53,0.18);
+    border-radius: 999px;
+    padding: 9px 16px;
+    cursor:pointer;
+    z-index:2;
+  }
+  .play-me .dot-icon{
+    width:8px; height:8px; border-radius:50%;
+    background: var(--gold);
+  }
+
+  .audio-bar{
+    position:absolute;
+    left:28px;
+    right:28px;
+    bottom:26px;
+    z-index:4;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background: rgba(255,255,255,0.75);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(61,42,53,0.15);
+    border-radius: 999px;
+    padding: 10px 16px;
+    transform: translateY(120%);
+    opacity:0;
+    transition: transform 0.4s ease, opacity 0.4s ease;
+  }
+  .audio-bar.visible{
+    transform: translateY(0);
+    opacity:1;
+  }
+  .audio-label{
+    font-size:12px;
+    color: var(--ink);
+    opacity:0.7;
+    white-space:nowrap;
+  }
+  .audio-track{
+    flex:1;
+    height:4px;
+    background: rgba(61,42,53,0.15);
+    border-radius:4px;
+    position:relative;
+    cursor:pointer;
+  }
+  .audio-fill{
+    position:absolute;
+    left:0; top:0; bottom:0;
+    width:0%;
+    background: var(--plum);
+    border-radius:4px;
+  }
 </style>
 </head>
 <body>
@@ -173,6 +285,15 @@
 <div class="frame">
   <div class="bloom bloom-1"></div>
   <div class="bloom bloom-2"></div>
+
+  <!-- background photo layers, one per screen. Fill in --bg-image with your own files. -->
+  <div class="bg-layer" data-bg-for="love" style="--bg-image:url('images/love.jpg');"></div>
+  <div class="bg-layer" data-bg-for="love-no" style="--bg-image:url('images/love.jpg');"></div>
+  <div class="bg-layer" data-bg-for="date" style="--bg-image:url('images/date.jpg');"></div>
+  <div class="bg-layer" data-bg-for="court" style="--bg-image:url('images/court.jpg');"></div>
+  <div class="bg-layer" data-bg-for="final-yes" style="--bg-image:url('images/final-yes.jpg');"></div>
+  <div class="bg-layer" data-bg-for="final-court" style="--bg-image:url('images/final-court.jpg');"></div>
+  <div class="bg-layer" data-bg-for="final-notyet" style="--bg-image:url('images/final-notyet.jpg');"></div>
 
   <div class="mark" id="progress">
     <div class="dot" data-step="1"><span></span></div>
@@ -182,25 +303,26 @@
 
   <!-- Screen 1 -->
   <section class="screen active" data-screen="love">
+    <button class="play-me" id="playMeBtn"><span class="dot-icon"></span> Play me</button>
     <div>
       <div class="eyebrow">Bet you didn't see this coming :D</div>
       <h1 class="headline">Are you in love with me?</h1>
     </div>
     <div class="choices">
-      <button class="choice primary" data-next="date" data-answer="yes">Why yes</button>
-      <button class="choice" data-next="love-no" data-answer="no">Naw you ugly</button>
+      <div class="choice-wrap"><button class="choice primary" data-next="date" data-answer="yes">Why yes</button></div>
+      <div class="choice-wrap"><button class="choice" data-next="love-no" data-answer="no">Naw you ugly</button></div>
     </div>
   </section>
 
-  <!-- Screen love-no (soft fallback if she says no to Q1) -->
+  <!-- Screen love-no -->
   <section class="screen" data-screen="love-no">
     <div>
       <div class="eyebrow">NOT GONNA LIE DIDN'T SEE THAT COMING!</div>
       <h1 class="headline">Well I supose that's ok... well then mind if I ask you another question?</h1>
-      <p class="sub">If not I'd recommend closing this page >.\.</p>
+      <p class="sub">If not I'd recommend closing this page &gt;.\.</p>
     </div>
     <div class="choices">
-      <button class="choice primary" data-next="date">Go on then</button>
+      <div class="choice-wrap"><button class="choice primary" data-next="date">Go on then</button></div>
     </div>
   </section>
 
@@ -212,8 +334,8 @@
       <p class="sub">You can answer this however you like, no pressure.</p>
     </div>
     <div class="choices">
-      <button class="choice primary" data-next="final-yes" data-answer="yes">Yes</button>
-      <button class="choice" data-next="court" data-answer="no">I still need time</button>
+      <div class="choice-wrap"><button class="choice primary" data-next="final-yes" data-answer="yes">Yes</button></div>
+      <div class="choice-wrap"><button class="choice" data-next="court" data-answer="no">I still need time</button></div>
     </div>
   </section>
 
@@ -225,8 +347,8 @@
       <p class="sub">I know you're not ready to date again yet, and that's okay. Lets keep on going on dates and trying to find our peace.</p>
     </div>
     <div class="choices">
-      <button class="choice primary" data-next="final-court" data-answer="yes">You're cute, I'd like that</button>
-      <button class="choice" data-next="final-notyet" data-answer="no">Not yet</button>
+      <div class="choice-wrap"><button class="choice primary" data-next="final-court" data-answer="yes">You're cute, I'd like that</button></div>
+      <div class="choice-wrap"><button class="choice" data-next="final-notyet" data-answer="no">Not yet</button></div>
     </div>
   </section>
 
@@ -260,13 +382,23 @@
     <p class="heart">&#9825;</p>
   </section>
 
+  <!-- persistent mini audio bar, appears once "Play me" is tapped and never stops -->
+  <div class="audio-bar" id="audioBar">
+    <span class="audio-label">Now playing</span>
+    <div class="audio-track" id="audioTrack">
+      <div class="audio-fill" id="audioFill"></div>
+    </div>
+  </div>
+
+  <!-- Drop your merged voiceover + song file here and update the src -->
+  <audio id="bgAudio" src="audio/track.mp3" preload="auto" loop></audio>
 </div>
 
 <script>
   const screens = document.querySelectorAll('.screen');
   const dots = document.querySelectorAll('.dot');
+  const bgLayers = document.querySelectorAll('.bg-layer');
 
-  // maps each screen name to a progress step (1-3), final screens count as step 3
   const stepMap = {
     'love': 1, 'love-no': 1,
     'date': 2,
@@ -275,9 +407,23 @@
   };
 
   function showScreen(name){
-    screens.forEach(s => s.classList.remove('active'));
+    const current = document.querySelector('.screen.active');
     const target = document.querySelector(`[data-screen="${name}"]`);
-    if(target) target.classList.add('active');
+    if(!target || target === current) return;
+
+    if(current){
+      current.classList.remove('active');
+      current.classList.add('leaving');
+      setTimeout(() => {
+        current.classList.remove('leaving');
+      }, 280);
+    }
+
+    setTimeout(() => {
+      target.classList.add('active');
+    }, current ? 140 : 0);
+
+    bgLayers.forEach(b => b.classList.toggle('active', b.dataset.bgFor === name));
 
     const step = stepMap[name] || 1;
     dots.forEach(d => {
@@ -286,14 +432,71 @@
     });
   }
 
+  // ----- sparkles around a tapped button -----
+  function spawnSparkles(button){
+    const rect = button.getBoundingClientRect();
+    const frame = document.querySelector('.frame');
+    const frameRect = frame.getBoundingClientRect();
+    const count = 10;
+
+    for(let i = 0; i < count; i++){
+      const s = document.createElement('div');
+      s.className = 'sparkle';
+      const startX = rect.left - frameRect.left + Math.random() * rect.width;
+      const startY = rect.top - frameRect.top + Math.random() * rect.height;
+      const angle = Math.random() * Math.PI * 2;
+      const dist = 18 + Math.random() * 22;
+      s.style.left = startX + 'px';
+      s.style.top = startY + 'px';
+      s.style.setProperty('--sx', Math.cos(angle) * dist + 'px');
+      s.style.setProperty('--sy', Math.sin(angle) * dist + 'px');
+      frame.appendChild(s);
+      setTimeout(() => s.remove(), 750);
+    }
+  }
+
   document.querySelectorAll('button.choice').forEach(btn => {
     btn.addEventListener('click', () => {
+      spawnSparkles(btn);
       const next = btn.getAttribute('data-next');
-      showScreen(next);
+      setTimeout(() => showScreen(next), 90);
     });
   });
 
+  // ----- play me + persistent mini audio bar -----
+  const audio = document.getElementById('bgAudio');
+  const playMeBtn = document.getElementById('playMeBtn');
+  const audioBar = document.getElementById('audioBar');
+  const audioTrack = document.getElementById('audioTrack');
+  const audioFill = document.getElementById('audioFill');
+
+  playMeBtn.addEventListener('click', () => {
+    audio.play().catch(() => {});
+    playMeBtn.style.display = 'none';
+    audioBar.classList.add('visible');
+  }, { once: true });
+
+  audio.addEventListener('timeupdate', () => {
+    if(!audio.duration) return;
+    const pct = (audio.currentTime / audio.duration) * 100;
+    audioFill.style.width = pct + '%';
+  });
+
+  function seekFromEvent(e){
+    const rect = audioTrack.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const pct = Math.min(Math.max((clientX - rect.left) / rect.width, 0), 1);
+    if(audio.duration){
+      audio.currentTime = pct * audio.duration;
+    }
+  }
+  audioTrack.addEventListener('click', seekFromEvent);
+  audioTrack.addEventListener('touchstart', seekFromEvent);
+
+  // initial state
+  bgLayers.forEach(b => b.classList.toggle('active', b.dataset.bgFor === 'love'));
   showScreen('love');
+  document.querySelector('[data-screen="love"]').classList.add('active');
 </script>
 
 </body>
